@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     ]
 
     # Storage fallback
-    UPLOAD_DIR: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../uploads"))
+    UPLOAD_DIR: str = "/tmp/uploads" if os.environ.get("VERCEL") else os.path.abspath(os.path.join(os.path.dirname(__file__), "../../uploads"))
     MAX_UPLOAD_SIZE_MB: int = 10
 
     # SMTP
@@ -54,4 +54,19 @@ class Settings(BaseSettings):
         extra = "allow"
 
 
+import tempfile
+
 settings = Settings()
+temp_dir = tempfile.gettempdir()
+
+# Adjust for Vercel Serverless environment
+if os.environ.get("VERCEL"):
+    settings.UPLOAD_DIR = os.path.join(temp_dir, "uploads")
+    if settings.DATABASE_URL.startswith("sqlite:///."):
+        settings.DATABASE_URL = f"sqlite:///{os.path.join(temp_dir, 'dayflow.db')}"
+
+if settings.DATABASE_URL.startswith("postgres://"):
+    settings.DATABASE_URL = settings.DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+
+

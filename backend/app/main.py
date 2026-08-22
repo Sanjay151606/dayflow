@@ -23,15 +23,19 @@ from app.api.routes.departments import router as departments_router
 from app.api.routes.settings import router as settings_router
 from app.api.routes.ai_assistant import router as ai_router
 
-# Ensure tables and seed on start
-Base.metadata.create_all(bind=engine)
+# Ensure tables and seed on start safely
 try:
+    Base.metadata.create_all(bind=engine)
     seed_database()
 except Exception as e:
-    print(f"Seed note: {e}")
+    print(f"Startup DB init note: {e}")
 
-# Ensure upload directory exists
-os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+# Ensure upload directory exists safely
+try:
+    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+except Exception as e:
+    print(f"Upload dir note: {e}")
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

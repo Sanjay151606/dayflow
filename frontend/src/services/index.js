@@ -21,6 +21,21 @@ export const authService = {
     return res.data;
   },
 
+  async forgotPassword(email) {
+    const res = await api.post('/auth/forgot-password', { email });
+    return res.data;
+  },
+
+  async resetPassword(token, new_password) {
+    const res = await api.post('/auth/reset-password', { token, new_password });
+    return res.data;
+  },
+
+  async changePassword(current_password, new_password) {
+    const res = await api.post('/auth/change-password', { current_password, new_password });
+    return res.data;
+  },
+
   async getMe() {
     const res = await api.get('/auth/me');
     return res.data;
@@ -126,6 +141,25 @@ export const leaveService = {
   }
 };
 
+export const wfhService = {
+  async applyWFH(data) {
+    const res = await api.post('/wfh', data);
+    return res.data;
+  },
+  async getMyWFH() {
+    const res = await api.get('/wfh/me');
+    return res.data;
+  },
+  async getAllWFH(params) {
+    const res = await api.get('/wfh', { params });
+    return res.data;
+  },
+  async approveWFH(id, comment) {
+    const res = await api.patch(`/wfh/${id}/approve`, { comment });
+    return res.data;
+  }
+};
+
 export const payrollService = {
   async getMyPayroll() {
     const res = await api.get('/payroll/me');
@@ -149,6 +183,43 @@ export const payrollService = {
   },
   async getSalarySlip(id) {
     const res = await api.get(`/payroll/${id}/salary-slip`);
+    return res.data;
+  }
+};
+
+export const departmentService = {
+  async getDepartments() {
+    const res = await api.get('/departments');
+    return res.data;
+  },
+  async createDepartment(data) {
+    const res = await api.post('/departments', data);
+    return res.data;
+  },
+  async createDesignation(data) {
+    const res = await api.post('/departments/designations', data);
+    return res.data;
+  }
+};
+
+export const settingsService = {
+  async getSettings() {
+    const res = await api.get('/settings');
+    return res.data;
+  },
+  async updateSettings(settingsMap) {
+    const res = await api.put('/settings', { settings: settingsMap });
+    return res.data;
+  }
+};
+
+export const aiService = {
+  async queryAssistant(prompt) {
+    const res = await api.post('/ai/query', { prompt });
+    return res.data;
+  },
+  async getAnomalies() {
+    const res = await api.get('/ai/anomalies');
     return res.data;
   }
 };

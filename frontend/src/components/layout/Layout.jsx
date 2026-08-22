@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { notificationService } from '../../services';
+import { AIAssistantModal } from '../common/AIAssistantModal';
 import {
   LayoutDashboard,
   Users,
@@ -13,12 +14,11 @@ import {
   Settings,
   LogOut,
   ShieldCheck,
-  ChevronRight,
+  Building,
   Menu,
   X,
-  Clock,
   Sparkles,
-  Search
+  Bot
 } from 'lucide-react';
 
 export const Layout = ({ children }) => {
@@ -28,6 +28,7 @@ export const Layout = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
   const isAdminOrHr = user?.role === 'ADMIN' || user?.role === 'HR';
@@ -62,22 +63,24 @@ export const Layout = ({ children }) => {
 
   const employeeNav = [
     { name: 'Dashboard', path: '/employee/dashboard', icon: LayoutDashboard },
-    { name: 'My Profile', path: '/employee/profile', icon: Users },
-    { name: 'Attendance', path: '/employee/attendance', icon: CalendarCheck },
+    { name: 'My Profile & Onboarding', path: '/employee/profile', icon: Users },
+    { name: 'Attendance & WFH', path: '/employee/attendance', icon: CalendarCheck },
     { name: 'Leave Requests', path: '/employee/leaves', icon: CalendarDays },
-    { name: 'Payroll', path: '/employee/payroll', icon: CreditCard },
-    { name: 'Documents', path: '/employee/documents', icon: FileText },
+    { name: 'Payroll & Slips', path: '/employee/payroll', icon: CreditCard },
+    { name: 'Documents Vault', path: '/employee/documents', icon: FileText },
   ];
 
   const adminNav = [
     { name: 'Overview', path: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Employees', path: '/admin/employees', icon: Users },
+    { name: 'Departments', path: '/admin/departments', icon: Building },
     { name: 'Attendance Hub', path: '/admin/attendance', icon: CalendarCheck },
     { name: 'Leave Approvals', path: '/admin/leaves', icon: CalendarDays },
     { name: 'Payroll Manager', path: '/admin/payroll', icon: CreditCard },
     { name: 'Reports & Analytics', path: '/admin/reports', icon: Sparkles },
     { name: 'Documents', path: '/admin/documents', icon: FileText },
     ...(user?.role === 'ADMIN' ? [{ name: 'Audit Logs', path: '/admin/audit', icon: ShieldCheck }] : []),
+    ...(user?.role === 'ADMIN' ? [{ name: 'System Settings', path: '/admin/settings', icon: Settings }] : []),
   ];
 
   const navItems = isAdminOrHr ? adminNav : employeeNav;
@@ -147,6 +150,17 @@ export const Layout = ({ children }) => {
             ))}
           </div>
 
+          {/* AI HR Assistant Trigger Button */}
+          <div className="p-4 pt-0">
+            <button
+              onClick={() => setAiModalOpen(true)}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-brand-600 to-sky-500 hover:from-brand-500 hover:to-sky-400 shadow-glow transition"
+            >
+              <Sparkles className="w-4 h-4 text-amber-300" />
+              Ask AI Assistant
+            </button>
+          </div>
+
           {/* User Account & Logout */}
           <div className="p-4 border-t border-slate-800 bg-slate-950/40">
             <div className="flex items-center gap-3 mb-3 px-2">
@@ -188,6 +202,15 @@ export const Layout = ({ children }) => {
 
           {/* Right Header Action Items */}
           <div className="flex items-center gap-4">
+            {/* AI Assistant Quick Nav Button */}
+            <button
+              onClick={() => setAiModalOpen(true)}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              AI HR Assistant
+            </button>
+
             {/* Notification Bell Dropdown */}
             <div className="relative">
               <button
@@ -267,6 +290,9 @@ export const Layout = ({ children }) => {
           {children}
         </main>
       </div>
+
+      {/* AI Assistant Modal Component */}
+      <AIAssistantModal isOpen={aiModalOpen} onClose={() => setAiModalOpen(false)} />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import enum
-from datetime import datetime, date, time
-from sqlalchemy import Column, Integer, String, Date, DateTime, Time, Float, ForeignKey, Enum, UniqueConstraint, Text
+from datetime import datetime, date
+from sqlalchemy import Column, Integer, String, Date, DateTime, Float, ForeignKey, Enum, UniqueConstraint, Text
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -10,6 +10,8 @@ class AttendanceStatus(str, enum.Enum):
     ABSENT = "ABSENT"
     HALF_DAY = "HALF_DAY"
     LEAVE = "LEAVE"
+    LATE = "LATE"
+    WORK_FROM_HOME = "WORK_FROM_HOME"
 
 
 class Attendance(Base):
@@ -22,6 +24,8 @@ class Attendance(Base):
     check_out = Column(DateTime, nullable=True)
     status = Column(Enum(AttendanceStatus), default=AttendanceStatus.PRESENT, nullable=False)
     working_hours = Column(Float, default=0.0, nullable=False)
+    late_minutes = Column(Integer, default=0, nullable=False)
+    overtime_hours = Column(Float, default=0.0, nullable=False)
     remarks = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

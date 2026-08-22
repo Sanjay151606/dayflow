@@ -18,7 +18,10 @@ class Payroll(Base):
     employee_id = Column(Integer, ForeignKey("employees.id", ondelete="CASCADE"), nullable=False, index=True)
     basic_salary = Column(Float, nullable=False, default=0.0)
     allowances = Column(Float, nullable=False, default=0.0)
+    bonus = Column(Float, nullable=False, default=0.0)
+    overtime_pay = Column(Float, nullable=False, default=0.0)
     deductions = Column(Float, nullable=False, default=0.0)
+    tax = Column(Float, nullable=False, default=0.0)
     net_salary = Column(Float, nullable=False, default=0.0)
     pay_period = Column(String(50), nullable=False)  # e.g., "2026-08"
     payment_date = Column(Date, nullable=True)

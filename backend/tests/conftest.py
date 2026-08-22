@@ -13,6 +13,7 @@ from app.core.database import Base, get_db
 from app.core.security import get_password_hash
 from app.models.user import User, UserRole
 from app.models.employee import Employee
+from app.models.department import Department, Designation
 from app.models.attendance import Attendance, AttendanceStatus
 from app.models.leave import LeaveRequest, LeaveType, LeaveStatus
 from app.models.payroll import Payroll, PayrollStatus
@@ -28,6 +29,13 @@ def setup_test_db():
     Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
     
+    # Pre-create test department
+    eng_dept = db.query(Department).filter(Department.code == "ENG").first()
+    if not eng_dept:
+        eng_dept = Department(name="Engineering", code="ENG", description="Engineering Department", status="ACTIVE")
+        db.add(eng_dept)
+        db.flush()
+
     # Pre-create test accounts if not existing
     admin_u = db.query(User).filter(User.email == "admin@dayflow.com").first()
     if not admin_u:
@@ -73,6 +81,19 @@ def setup_test_db():
         db.flush()
         emp = Employee(user_id=emp_u.id, first_name="Marcus", last_name="Chen", department="Engineering", designation="Developer")
         db.add(emp)
+        db.flush()
+
+        # Add payroll for employee
+        pay = Payroll(
+            employee_id=emp.id,
+            basic_salary=7500.0,
+            allowances=1000.0,
+            deductions=500.0,
+            net_salary=8000.0,
+            pay_period="2026-08",
+            status=PayrollStatus.PAID
+        )
+        db.add(pay)
 
     db.commit()
     db.close()

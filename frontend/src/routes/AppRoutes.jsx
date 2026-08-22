@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Layout } from '../components/layout/Layout';
 
 // Auth Pages
-import { Login, Register } from '../pages/auth/AuthPages';
+import { Login, Register, ForgotPassword, ResetPassword } from '../pages/auth/AuthPages';
 
 // Employee Pages
 import { EmployeeDashboard } from '../pages/employee/EmployeeDashboard';
@@ -21,6 +21,8 @@ import { LeaveApprovals } from '../pages/admin/LeaveApprovals';
 import { PayrollManager } from '../pages/admin/PayrollManager';
 import { ReportsAnalytics } from '../pages/admin/ReportsAnalytics';
 import { DocumentManager } from '../pages/admin/DocumentManager';
+import { DepartmentManager } from '../pages/admin/DepartmentManager';
+import { SystemSettings } from '../pages/admin/SystemSettings';
 import { AuditLogs } from '../pages/admin/AuditLogs';
 
 // Protected Route Guard
@@ -55,7 +57,7 @@ export const AppRoutes = () => {
 
   return (
     <Routes>
-      {/* Public Routes */}
+      {/* Public Auth Routes */}
       <Route
         path="/login"
         element={
@@ -71,6 +73,8 @@ export const AppRoutes = () => {
         }
       />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Employee Routes */}
       <Route
@@ -140,6 +144,14 @@ export const AppRoutes = () => {
         }
       />
       <Route
+        path="/admin/departments"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN', 'HR']}>
+            <DepartmentManager />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin/attendance"
         element={
           <ProtectedRoute allowedRoles={['ADMIN', 'HR']}>
@@ -184,6 +196,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={['ADMIN']}>
             <AuditLogs />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/settings"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <SystemSettings />
           </ProtectedRoute>
         }
       />

@@ -3,13 +3,12 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
-from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.database import engine, Base
 from app.utils.seed import seed_database
 
-# Import routers
+# Import all routers
 from app.api.routes.auth import router as auth_router
 from app.api.routes.employees import router as employees_router
 from app.api.routes.attendance import router as attendance_router
@@ -19,6 +18,10 @@ from app.api.routes.documents import router as documents_router
 from app.api.routes.notifications import router as notifications_router
 from app.api.routes.reports import router as reports_router
 from app.api.routes.audit import router as audit_router
+from app.api.routes.wfh import router as wfh_router
+from app.api.routes.departments import router as departments_router
+from app.api.routes.settings import router as settings_router
+from app.api.routes.ai_assistant import router as ai_router
 
 # Ensure tables and seed on start
 Base.metadata.create_all(bind=engine)
@@ -33,7 +36,7 @@ os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Dayflow HRMS REST API - Every workday, perfectly aligned.",
-    version="1.0.0",
+    version="2.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -80,6 +83,10 @@ app.include_router(documents_router, prefix=settings.API_V1_STR)
 app.include_router(notifications_router, prefix=settings.API_V1_STR)
 app.include_router(reports_router, prefix=settings.API_V1_STR)
 app.include_router(audit_router, prefix=settings.API_V1_STR)
+app.include_router(wfh_router, prefix=settings.API_V1_STR)
+app.include_router(departments_router, prefix=settings.API_V1_STR)
+app.include_router(settings_router, prefix=settings.API_V1_STR)
+app.include_router(ai_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")
@@ -88,7 +95,7 @@ def root():
         "system": settings.PROJECT_NAME,
         "tagline": settings.TAGLINE,
         "status": "online",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "docs": "/docs",
         "redoc": "/redoc"
     }

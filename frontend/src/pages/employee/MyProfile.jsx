@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { employeeService, documentService } from '../../services';
+import { employeeService, documentService, authService } from '../../services';
 import { Card, Button, Badge } from '../../components/common/UIComponents';
-import { User, Mail, Phone, MapPin, Briefcase, Calendar, ShieldCheck, DollarSign, FileText, Upload, Trash2 } from 'lucide-react';
+import {
+  User, Mail, Phone, MapPin, Briefcase, Calendar, ShieldCheck,
+  FileText, Upload, Trash2, CheckCircle2, Lock, Landmark, HeartHandshake
+} from 'lucide-react';
 
 export const MyProfile = () => {
   const { user } = useAuth();
@@ -13,10 +16,23 @@ export const MyProfile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [changingPass, setChangingPass] = useState(false);
 
   // Edit fields
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [routingNumber, setRoutingNumber] = useState('');
+  const [emergencyName, setEmergencyName] = useState('');
+  const [emergencyPhone, setEmergencyPhone] = useState('');
+  const [emergencyRelation, setEmergencyRelation] = useState('');
+
+  // Password fields
+  const [currPassword, setCurrPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+
+  // Document upload
   const [docType, setDocType] = useState('RESUME');
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -29,6 +45,12 @@ export const MyProfile = () => {
       setProfile(prof);
       setPhone(prof.phone || '');
       setAddress(prof.address || '');
+      setBankName(prof.bank_name || '');
+      setAccountNumber(prof.account_number || '');
+      setRoutingNumber(prof.routing_number || '');
+      setEmergencyName(prof.emergency_contact_name || '');
+      setEmergencyPhone(prof.emergency_contact_phone || '');
+      setEmergencyRelation(prof.emergency_contact_relation || '');
       setDocuments(docs);
     } catch (e) {
       console.error(e);
@@ -45,13 +67,38 @@ export const MyProfile = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      await employeeService.updateMyProfile({ phone, address });
-      addToast('Profile updated successfully!', 'success');
+      await employeeService.updateMyProfile({
+        phone,
+        address,
+        bank_name: bankName,
+        account_number: accountNumber,
+        routing_number: routingNumber,
+        emergency_contact_name: emergencyName,
+        emergency_contact_phone: emergencyPhone,
+        emergency_contact_relation: emergencyRelation,
+        onboarding_status: 'COMPLETED'
+      });
+      addToast('Profile & onboarding information updated!', 'success');
       fetchProfileAndDocs();
     } catch (err) {
       addToast('Failed to update profile.', 'error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setChangingPass(true);
+    try {
+      await authService.changePassword(currPassword, newPassword);
+      addToast('Password changed successfully!', 'success');
+      setCurrPassword('');
+      setNewPassword('');
+    } catch (err) {
+      addToast(err.response?.data?.detail || 'Failed to change password', 'error');
+    } finally {
+      setChangingPass(false);
     }
   };
 
@@ -95,6 +142,14 @@ export const MyProfile = () => {
     );
   }
 
+  // Calculate onboarding progress %
+  let completedSteps = 1; // User account creation
+  if (profile?.phone && profile?.address) completedSteps++;
+  if (profile?.bank_name && profile?.account_number) completedSteps++;
+  if (profile?.emergency_contact_name) completedSteps++;
+  if (documents.length > 0) completedSteps++;
+  const onboardingPct = Math.round((completedSteps / 5) * 100);
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Top Banner Card */}
@@ -125,76 +180,185 @@ export const MyProfile = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Editable Personal Contact Information */}
-        <Card title="Personal Information (Editable)" subtitle="Manage your phone number and residential address">
-          <form onSubmit={handleSaveProfile} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Phone Number</label>
-              <div className="relative">
-                <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
-                  type="text"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+1 (555) 000-0000"
-                  className="w-full border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none"
-                />
-              </div>
-            </div>
+      {/* Onboarding Checklist Tracker */}
+      <Card title="Onboarding Progress Indicator" subtitle="Complete all required stages for full employee certification">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-xs font-bold">
+            <span className="text-slate-700">Completion Status ({completedSteps}/5 steps verified)</span>
+            <span className="text-brand-600">{onboardingPct}% Complete</span>
+          </div>
+          <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+            <div className="bg-brand-600 h-2.5 rounded-full transition-all duration-300" style={{ width: `${onboardingPct}%` }} />
+          </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Residential Address</label>
-              <div className="relative">
-                <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <textarea
-                  rows={3}
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Street, City, State, ZIP"
-                  className="w-full border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none"
-                />
-              </div>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2 text-[11px] font-semibold text-center">
+            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
+              ✓ Account Setup
             </div>
-
-            <div className="pt-2">
-              <Button type="submit" variant="primary" size="sm" isLoading={saving}>
-                Save Profile Changes
-              </Button>
+            <div className={`p-2 rounded-xl border ${profile?.phone ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-500'}`}>
+              {profile?.phone ? '✓' : '○'} Contact Details
             </div>
-          </form>
-        </Card>
-
-        {/* Read-Only Employment & Job Info */}
-        <Card title="Employment & Job Details (Read-Only)" subtitle="Official company records maintained by HR">
-          <div className="space-y-3.5 text-xs">
-            <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-slate-500 font-medium">Department</span>
-              <span className="font-bold text-slate-800">{profile?.department}</span>
+            <div className={`p-2 rounded-xl border ${profile?.bank_name ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-500'}`}>
+              {profile?.bank_name ? '✓' : '○'} Direct Deposit
             </div>
-            <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-slate-500 font-medium">Designation</span>
-              <span className="font-bold text-slate-800">{profile?.designation}</span>
+            <div className={`p-2 rounded-xl border ${profile?.emergency_contact_name ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-500'}`}>
+              {profile?.emergency_contact_name ? '✓' : '○'} Emergency Info
             </div>
-            <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-slate-500 font-medium">Employment Type</span>
-              <span className="font-bold text-slate-800">{profile?.employment_type}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-slate-500 font-medium">Joining Date</span>
-              <span className="font-bold text-slate-800">{profile?.joining_date}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-slate-500 font-medium">Gender / DOB</span>
-              <span className="font-bold text-slate-800">{profile?.gender || 'N/A'} ({profile?.date_of_birth || 'N/A'})</span>
-            </div>
-            <div className="flex justify-between py-2">
-              <span className="text-slate-500 font-medium">Salary Information</span>
-              <span className="font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded">View in My Payroll tab</span>
+            <div className={`p-2 rounded-xl border ${documents.length > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-500'}`}>
+              {documents.length > 0 ? '✓' : '○'} Document Vault
             </div>
           </div>
+        </div>
+      </Card>
+
+      {/* Editable Info Forms */}
+      <form onSubmit={handleSaveProfile} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Contact Details */}
+          <Card title="Personal & Residential Details" subtitle="Your phone number and physical address">
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-600 uppercase mb-1">Phone Number</label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+1 (555) 000-0000"
+                    className="w-full border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-600 uppercase mb-1">Residential Address</label>
+                <div className="relative">
+                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <textarea
+                    rows={3}
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Street, City, State, ZIP"
+                    className="w-full border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Direct Deposit / Banking */}
+          <Card title="Bank & Direct Deposit Information" subtitle="Used for salary disbursal and tax slips">
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-600 uppercase mb-1">Bank Name</label>
+                <input
+                  type="text"
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  placeholder="Chase / Silicon Valley Bank"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block font-semibold text-slate-600 uppercase mb-1">Account Number</label>
+                  <input
+                    type="text"
+                    value={accountNumber}
+                    onChange={(e) => setAccountNumber(e.target.value)}
+                    placeholder="••••••••4921"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-600 uppercase mb-1">Routing Code</label>
+                  <input
+                    type="text"
+                    value={routingNumber}
+                    onChange={(e) => setRoutingNumber(e.target.value)}
+                    placeholder="021000021"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Emergency Contacts */}
+        <Card title="Emergency Contact Information" subtitle="Authorized emergency contact personnel">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div>
+              <label className="block font-semibold text-slate-600 uppercase mb-1">Contact Name</label>
+              <input
+                type="text"
+                value={emergencyName}
+                onChange={(e) => setEmergencyName(e.target.value)}
+                placeholder="Jane Doe"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block font-semibold text-slate-600 uppercase mb-1">Contact Phone</label>
+              <input
+                type="text"
+                value={emergencyPhone}
+                onChange={(e) => setEmergencyPhone(e.target.value)}
+                placeholder="+1 (555) 999-8888"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block font-semibold text-slate-600 uppercase mb-1">Relationship</label>
+              <input
+                type="text"
+                value={emergencyRelation}
+                onChange={(e) => setEmergencyRelation(e.target.value)}
+                placeholder="Spouse / Parent / Sibling"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="pt-4 flex justify-end">
+            <Button type="submit" variant="primary" size="md" isLoading={saving}>
+              Save Profile & Onboarding Data
+            </Button>
+          </div>
         </Card>
-      </div>
+      </form>
+
+      {/* Security & Change Password Card */}
+      <Card title="Security & Credentials" subtitle="Update your sign-in password">
+        <form onSubmit={handleChangePassword} className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs items-end">
+          <div>
+            <label className="block font-semibold text-slate-600 uppercase mb-1">Current Password</label>
+            <input
+              type="password"
+              required
+              value={currPassword}
+              onChange={(e) => setCurrPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block font-semibold text-slate-600 uppercase mb-1">New Password</label>
+            <input
+              type="password"
+              required
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Min 8 chars, 1 uppercase, 1 symbol"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none"
+            />
+          </div>
+          <Button type="submit" variant="secondary" size="md" isLoading={changingPass} icon={Lock}>
+            Update Password
+          </Button>
+        </form>
+      </Card>
 
       {/* Employee Documents Vault */}
       <Card title="My Documents Vault" subtitle="Upload and manage your credentials, IDs, and certificates">

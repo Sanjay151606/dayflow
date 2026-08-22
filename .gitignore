@@ -17,3 +17,5 @@ dayflow.db
 test_dayflow.db
 uploads/*
 !uploads/.gitkeep
+
+.vercel

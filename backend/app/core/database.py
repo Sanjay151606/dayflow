@@ -1,8 +1,10 @@
-from sqlalchemy import create_engine
+import os
+import uuid
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 from app.core.config import settings
 
-# Configure SQLite or PostgreSQL
+# Determine DB Driver
 connect_args = {}
 if settings.DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
@@ -16,6 +18,17 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
+
+
+def check_db_connection() -> bool:
+    """Tests live database connectivity."""
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return True
+    except Exception as e:
+        print(f"Database Connection Check Note: {e}")
+        return False
 
 
 def get_db():

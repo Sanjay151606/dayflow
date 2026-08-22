@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
 from app.core.config import settings
-from app.core.database import engine, Base
+from app.core.database import engine, Base, check_db_connection
 from app.utils.seed import seed_database
 
 # Import all routers
@@ -89,6 +89,16 @@ app.include_router(settings_router, prefix=settings.API_V1_STR)
 app.include_router(ai_router, prefix=settings.API_V1_STR)
 
 
+@app.get(f"{settings.API_V1_STR}/health")
+@app.get("/health")
+def health_check():
+    db_connected = check_db_connection()
+    return {
+        "status": "healthy",
+        "database": "connected" if db_connected else "disconnected"
+    }
+
+
 @app.get("/")
 def root():
     return {
@@ -99,8 +109,3 @@ def root():
         "docs": "/docs",
         "redoc": "/redoc"
     }
-
-
-@app.get("/health")
-def health_check():
-    return {"status": "healthy"}

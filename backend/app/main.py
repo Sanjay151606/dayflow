@@ -99,8 +99,30 @@ def health_check():
     }
 
 
-@app.get("/")
-def root():
+# Frontend static files and SPA fallback
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+frontend_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend/dist"))
+frontend_assets = os.path.join(frontend_dist, "assets")
+
+if os.path.isdir(frontend_assets):
+    app.mount("/assets", StaticFiles(directory=frontend_assets), name="assets")
+
+
+@app.get("/{full_path:path}")
+async def serve_spa_or_root(full_path: str):
+    # If the requested path is a real file inside dist (e.g. favicon, images)
+    if os.path.isdir(frontend_dist):
+        file_path = os.path.join(frontend_dist, full_path)
+        if full_path and os.path.isfile(file_path):
+            return FileResponse(file_path)
+        # Otherwise serve SPA index.html
+        index_path = os.path.join(frontend_dist, "index.html")
+        if os.path.isfile(index_path):
+            return FileResponse(index_path)
+
+    # Fallback to API status JSON
     return {
         "system": settings.PROJECT_NAME,
         "tagline": settings.TAGLINE,
@@ -109,3 +131,4 @@ def root():
         "docs": "/docs",
         "redoc": "/redoc"
     }
+
